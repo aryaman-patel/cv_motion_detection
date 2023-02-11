@@ -45,15 +45,16 @@ int main(int argc, char** argv)
         temporal_gradient.push_back(temp_grad);
     }
 
-    // Show the images like a video
+    // Show the images like a video and save it
+    cv::VideoWriter video("output.avi", cv::VideoWriter::fourcc('M','J','P','G'), 10, temporal_gradient[0].size());
     int i = 0;
     while (i < temporal_gradient.size())
     {
         cv::imshow("Video", temporal_gradient[i]);
         cv::waitKey(25);
+        video.write(temporal_gradient[i]);
         i++;
-    }
-    
+    }    
     
 
 }
