@@ -1,4 +1,4 @@
-# cv_motion_detection
+# Motion Detection
 Project 1 - Motion Detection Using simple image filtering. 
 
 Work done till now - 
