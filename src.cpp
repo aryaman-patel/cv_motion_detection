@@ -2,30 +2,26 @@
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include <algorithm>
-// g++ -std=c++17 src.cpp -o src $(pkg-config --cflags --libs opencv4)
 
-
-bool sorted_func(std::filesystem::path a, std::filesystem::path b)
-{
-    // Sort the files by numerical order
+/// A function to compare two numerical filenames so we can sort them
+bool CompareFilepaths(std::filesystem::path a, std::filesystem::path b){
     return std::stoi(a.filename().string()) < std::stoi(b.filename().string());
 }
 
-
-int main(int argc, char** argv)
-{
-    // Read images form the folder
+/// Reads images in `folder` and returns them in a vector
+std::vector<cv::Mat> ReadImages(std::string folder){
+    // Read images from the folder
     std::vector<cv::Mat> images;
-    std::string folderpath = "Office";
     std::vector<std::filesystem::path> entries;
+
     // Sort the files by numerical order.
-    for(const auto &entry : std::filesystem::directory_iterator(folderpath))
+    for(const auto &entry : std::filesystem::directory_iterator(folder))
     {
         entries.push_back(entry.path());
-        sort(entries.begin(), entries.end(), sorted_func);
+        sort(entries.begin(), entries.end(), CompareFilepaths);
     }
 
-    // Read in an order :
+    // Read in an order:
     for(const auto &entry : entries)
     {
         // Print the file name
@@ -33,9 +29,18 @@ int main(int argc, char** argv)
         cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
         images.push_back(image);
     }
+
+    return images;
+}
+
+/// main
+int main(int argc, char** argv)
+{
+    // Read in images
+    std::vector<cv::Mat> images = ReadImages("Office");
+
     // Convert to find temporal gradient
     std::vector<cv::Mat> temporal_gradient;
-
     for (int i = 0; i < images.size() - 1; i++)
     {
         cv::Mat temp_grad;
@@ -55,6 +60,4 @@ int main(int argc, char** argv)
         video.write(temporal_gradient[i]);
         i++;
     }    
-    
-
 }

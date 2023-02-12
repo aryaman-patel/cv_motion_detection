@@ -1,20 +1,26 @@
+#!/usr/bin/env python3
+
 import os
- 
-# Function to rename multiple files
-def main():   
-    folder = "/home/aryaman/Documents/CV_Project/Office/"
-    files = sorted(os.listdir(folder))
+import argparse
+
+
+# Function to rename multiple files to numerical ordering
+def main(args):
+    files = sorted(os.listdir(args.folder))
     for count, filename in enumerate(files):
-        dst = f"{str(count)}.jpg"
-        src =f"{folder}/{filename}"  # foldername/filename, if .py file is outside folder
-        dst =f"{folder}/{dst}"
+        src = f"{args.folder}/{filename}"  # foldername/filename, if .py file is outside folder
+        dst = f"{args.folder}/{str(count)}.jpg"
         print(filename)
-        # rename() function will
-        # rename all the files
         os.rename(src, dst)
- 
+
+
 # Driver Code
 if __name__ == '__main__':
-     
-    # Calling main() function
-    main()
+
+    args = argparse.ArgumentParser()
+    args.add_argument("-f", "--folder",
+                      type=str,
+                      default="~/Documents/CV_Project/Office/")
+    args = args.parse_args()
+
+    main(args)
