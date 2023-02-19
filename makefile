@@ -5,6 +5,7 @@ src: src.cpp
 	$(CXX) $(CPPFLAGS) -o src src.cpp $(shell pkg-config --cflags --libs opencv4)
 
 
+
 run: src
 	./src
 
