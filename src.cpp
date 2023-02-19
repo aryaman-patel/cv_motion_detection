@@ -88,15 +88,35 @@ std::vector<cv::Mat> TemporalGradientFilter(std::vector<cv::Mat> images, uint8_t
 }
 
 
+// Smoothing filters for images
+std::vector<cv::Mat>& SmoothingFilters(std::vector<cv::Mat>& images, float ssigma, int filter){
+
+    if(filter == 1)
+    {
+        // Apply box filter:
+        for (int i = 0; i < images.size(); i++){
+            cv::blur(images[i], images[i], cv::Size(3,3));
+        }
+    }
+    else if(filter == 2)
+    {
+        // Apply Gaussian filter:
+        for (int i = 0; i < images.size(); i++){
+            cv::GaussianBlur(images[i], images[i], cv::Size(0,0), ssigma);
+        }
+    }
+
+    return images;
+}
+
 /// Returns a set of masks that indicate thresholded temporal gradients using a 1x3 filter
 std::vector<cv::Mat> TemporalGradientDoG(std::vector<cv::Mat> images, uint8_t thresh, float tsigma){
     // Convert to find temporal gradient mask
     std::vector<cv::Mat> mask;
-    cv::Mat gaussian_filter = cv::getGaussianKernel(int(5*tsigma), tsigma, CV_32F);
-    // Apply Gaussian filter to each image
+    // Apply Gaussian filter:
     for (int i = 0; i < images.size(); i++){
         cv::Mat temp_grad;
-        cv::filter2D(images[i], temp_grad, -1, gaussian_filter);
+        cv::GaussianBlur(images[i], temp_grad, cv::Size(0, 0), tsigma);
         images[i] = temp_grad;
     }
     // Find DoG
@@ -129,6 +149,7 @@ int main(int argc, char** argv)
     std::cin >> videoWriter;
 
     // Read in images
+    std::cout << "\n Reading images..." << std::endl;
     if (dataset == 1)
     {
         images = ReadImages("Office");
@@ -142,6 +163,7 @@ int main(int argc, char** argv)
         std::cerr << "Invalid dataset input!!" << std::endl;
         return -1;
     }
+    std::cout << "\n Done reading images!" << std::endl;
     
     std::vector<cv::Mat> output;
 
