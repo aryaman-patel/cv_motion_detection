@@ -51,7 +51,7 @@ void VideoFileWriter(std::vector<cv::Mat>& input, std::vector<cv::Mat>& output)
         cv::imshow("Output", output[i]);
         writer.write(output[i]);
         // Show live and wait for a key with timeout long enough to show images
-        if (cv::waitKey(30) >= 0)
+        if (cv::waitKey(25) >= 0)
             break;
     }
 }
@@ -205,7 +205,7 @@ int main(int argc, char** argv)
     if (filtering == 1)
     {
 
-        output = TemporalGradientSimple(images, 30);
+        output = TemporalGradientSimple(images, 10);
     }
     else if (filtering == 2)
     {
