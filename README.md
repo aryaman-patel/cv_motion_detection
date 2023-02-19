@@ -14,7 +14,7 @@ Project 1 - Motion Detection Using simple image filtering.
  
  ### Output:
 
-1. Using a Simple absolute difference implementation -
+1. Simple absolute difference implementation -
 
 ![Simple_10](https://user-images.githubusercontent.com/117113574/219977344-b6737822-db0b-448e-9b6f-4a6e9e83ad2f.gif)
 
