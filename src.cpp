@@ -128,15 +128,15 @@ void SmoothingFilters(std::vector<cv::Mat>& images, float ssigma, int filter)
     }
 }
 
-void evaluateImages(std::vector<cv::Mat>& images, std::vector<cv::Scalar>&  means, std::vector<cv::Scalar>& stdevs)
+void evaluateImages(std::vector<cv::Mat>& images, std::vector<double>&  means, std::vector<double>& stdevs)
 {
     std::cout << "Evaluating noise in images..." << std::endl;
     cv::Scalar mean, std;
     for(const auto image : images)
     {
         cv::meanStdDev(image, mean, std);
-        means.push_back(mean);
-        stdevs.push_back(std);
+        means.push_back(mean[0]);
+        stdevs.push_back(std[0]);
     }
 }
 
@@ -226,17 +226,18 @@ int main(int argc, char** argv)
 
 
     // if we evaluate the images record noise
-    std::vector<cv::Scalar> means;
-    std::vector<cv::Scalar> stdevs;
+    std::vector<double> means;
+    std::vector<double> stdevs;
     evaluateImages(output, means, stdevs);
     std::ofstream datafile("noise.txt");
     for(size_t i = 0; i < means.size(); i++)
     {
-        datafile << i << " " << means[i][0] << " " << stdevs[i][0] << std::endl;
+        datafile << i << " " << means[i] << " " << stdevs[i] << std::endl;
     }
 
     // threshold images
-    Threshold(output, 10);
+    printf("std: %.2f, mean: %.2f\n", stdevs[0], means[0]);
+    Threshold(output, means[0]+10*stdevs[0]);
 
     // create folder for images if desired
     if(imageSeq){
@@ -271,7 +272,7 @@ int main(int argc, char** argv)
     
     // Plotting the data using gnuplot. **NOTE: Gotta install gnuplot first using sudo apt-get install gnuplot**
     FILE* gp = popen("gnuplot -persistent", "w");
-    fprintf(gp, "plot 'noise.txt' using 1:3 with lines title 'Stddev'\n");
+    fprintf(gp, "plot 'noise.txt' using 1:3 with lines title 'Stddev', 'noise.txt' using 1:2 with lines title 'mean'\n");
     fflush(gp);
     pclose(gp);
     return 0;   
