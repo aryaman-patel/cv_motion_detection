@@ -1,4 +1,6 @@
 .vscode/
+output/
+noise.txt
 
 src
 *.o

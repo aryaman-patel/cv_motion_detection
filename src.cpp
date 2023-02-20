@@ -58,30 +58,24 @@ void VideoFileWriter(std::vector<cv::Mat>& input, std::vector<cv::Mat>& output)
 
 
 /// Returns a set of masks that indicate thresholded temporal gradients
-std::vector<cv::Mat> TemporalGradientSimple(std::vector<cv::Mat> images, uint8_t thresh){
+std::vector<cv::Mat> TemporalGradientSimple(std::vector<cv::Mat> images){
     // Convert to find temporal gradient mask
     std::vector<cv::Mat> temporal_gradient_mask;
     for (int i = 0; i < images.size() - 1; i++){
         cv::Mat temp_grad;
         cv::absdiff(images[i], images[i+1], temp_grad);
-
-        // Thresholding
-        cv::threshold(temp_grad, temp_grad, thresh, 255, cv::THRESH_BINARY);
         temporal_gradient_mask.push_back(temp_grad);
     }
     return temporal_gradient_mask;
 }
 
 /// Returns a set of masks that indicate thresholded temporal gradients using a 1x3 filter
-std::vector<cv::Mat> TemporalGradientFilter(std::vector<cv::Mat> images, uint8_t thresh){
+std::vector<cv::Mat> TemporalGradientFilter(std::vector<cv::Mat> images){
     // Convert to find temporal gradient mask
     std::vector<cv::Mat> mask;
     for (int i = 1; i < images.size() - 1; i++){
         cv::Mat temp_grad;
         cv::addWeighted(images[i-1], -0.5, images[i+1], 0.5, 0, temp_grad);
-
-        // Thresholding
-        cv::threshold(temp_grad, temp_grad, thresh, 255, cv::THRESH_BINARY);
         mask.push_back(temp_grad);
     }
 
@@ -89,7 +83,7 @@ std::vector<cv::Mat> TemporalGradientFilter(std::vector<cv::Mat> images, uint8_t
 }
 
 /// Returns a set of masks that indicate thresholded temporal gradients using a 1x3 filter
-std::vector<cv::Mat> TemporalGradientDoG(std::vector<cv::Mat> images, uint8_t thresh, float tsigma){
+std::vector<cv::Mat> TemporalGradientDoG(std::vector<cv::Mat> images, float tsigma){
     // Convert to find temporal gradient mask
     std::vector<cv::Mat> mask;
     // Apply Gaussian filter:
@@ -102,12 +96,16 @@ std::vector<cv::Mat> TemporalGradientDoG(std::vector<cv::Mat> images, uint8_t th
     for (int i = 1; i < images.size() - 1; i++){
         cv::Mat temp_grad;
         cv::addWeighted(images[i-1], -1, images[i+1], 1, 0, temp_grad);
-
-        // Thresholding
-        cv::threshold(temp_grad, temp_grad, thresh, 255, cv::THRESH_BINARY);
         mask.push_back(temp_grad);
     }
     return mask;
+}
+
+void Threshold(std::vector<cv::Mat> images, uint8_t thresh){
+    for(auto& v : images){
+        // Thresholding
+        cv::threshold(v, v, thresh, 255, cv::THRESH_BINARY);
+    }
 }
 
 // Smoothing filters for images based on the selected filter.
@@ -140,8 +138,6 @@ void evaluateImages(std::vector<cv::Mat>& images, std::vector<cv::Scalar>&  mean
         means.push_back(mean);
         stdevs.push_back(std);
     }
-
-
 }
 
 /// main
@@ -152,6 +148,7 @@ int main(int argc, char** argv)
     float tsigma;
     float ssigma;
     bool videoWriter;
+    bool imageSeq;
     bool applySmoothing;
     int smoothing;
 
@@ -163,6 +160,10 @@ int main(int argc, char** argv)
     std::cin >> filtering;
     std::cout << "Write to video file? (0/1): ";
     std::cin >> videoWriter;
+    if(!videoWriter){
+        std::cout << "Write to image sequence? (0/1): ";
+        std::cin >> imageSeq;
+    }
     std::cout << "Apply smoothing? (0/1): ";
     std::cin >> applySmoothing;
     if (applySmoothing)
@@ -205,17 +206,17 @@ int main(int argc, char** argv)
     if (filtering == 1)
     {
 
-        output = TemporalGradientSimple(images, 10);
+        output = TemporalGradientSimple(images);
     }
     else if (filtering == 2)
     {
-        output = TemporalGradientFilter(images, 10);
+        output = TemporalGradientFilter(images);
     }
     else if (filtering == 3)
     {
         std::cout << "Enter tsigma value: ";
         std::cin >> tsigma;
-        output = TemporalGradientDoG(images, 10, tsigma);
+        output = TemporalGradientDoG(images, tsigma);
     }
     else
     {
@@ -223,15 +224,24 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // if we evaluate the images
+
+    // if we evaluate the images record noise
     std::vector<cv::Scalar> means;
     std::vector<cv::Scalar> stdevs;
     evaluateImages(output, means, stdevs);
-    // Write to a noise.txt files. 
     std::ofstream datafile("noise.txt");
     for(size_t i = 0; i < means.size(); i++)
     {
         datafile << i << " " << means[i][0] << " " << stdevs[i][0] << std::endl;
+    }
+
+    // threshold images
+    Threshold(output, 10);
+
+    // create folder for images if desired
+    if(imageSeq){
+        std::filesystem::remove_all("output");
+        std::filesystem::create_directory("output");
     }
 
     // if videoWriter is true, write the output to a video file
@@ -242,6 +252,7 @@ int main(int argc, char** argv)
     else
     {
         // Only Show the output
+        char buff[32];
         for (int i = 0; i < output.size(); i++)
         {
             cv::hconcat(images[i], output[i], output[i]);
@@ -249,13 +260,19 @@ int main(int argc, char** argv)
             // Show live and wait for a key with timeout long enough to show images
             if (cv::waitKey(30) >= 0)
                 break;
+
+            // if imageSeq is true, write the output to an image sequence
+            if(imageSeq){
+                sprintf(buff, "output/%d.jpg", i);
+                cv::imwrite(buff, output[i]);
+            }
         }
     }
     
     // Plotting the data using gnuplot. **NOTE: Gotta install gnuplot first using sudo apt-get install gnuplot**
-    // FILE* gp = popen("gnuplot -persistent", "w");
-    // fprintf(gp, "plot 'noise.txt' using 1:3 with lines title 'Stddev'\n");
-    // fflush(gp);
-    // pclose(gp);
+    FILE* gp = popen("gnuplot -persistent", "w");
+    fprintf(gp, "plot 'noise.txt' using 1:3 with lines title 'Stddev'\n");
+    fflush(gp);
+    pclose(gp);
     return 0;   
 }
