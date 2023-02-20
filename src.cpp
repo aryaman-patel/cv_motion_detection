@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include <algorithm>
+#include <numeric>
 
 /// A function to compare two numerical filenames so we can sort them
 bool CompareFilepaths(std::filesystem::path a, std::filesystem::path b){
@@ -116,7 +117,7 @@ void SmoothingFilters(std::vector<cv::Mat>& images, float ssigma, int filter)
     {
         // Apply box filter:
         for (int i = 0; i < images.size(); i++){
-            cv::blur(images[i], images[i], cv::Size(5,5));
+            cv::blur(images[i], images[i], cv::Size(3,3));
         }
     }
     else if(filter == 2)
@@ -236,8 +237,10 @@ int main(int argc, char** argv)
     }
 
     // threshold images
-    printf("std: %.2f, mean: %.2f\n", stdevs[0], means[0]);
-    Threshold(output, means[0]+10*stdevs[0]);
+    double average_std  = std::accumulate(stdevs.begin(), stdevs.end(), 0) / stdevs.size();
+    double average_mean = std::accumulate(means.begin(), means.end(), 0) / means.size();
+    printf("std: %.2f, mean: %.2f\n", average_std, average_mean);
+    Threshold(output, 5*average_std + average_mean);
 
     // create folder for images if desired
     if(imageSeq){
