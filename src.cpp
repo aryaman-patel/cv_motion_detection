@@ -83,23 +83,37 @@ std::vector<cv::Mat> TemporalGradientFilter(std::vector<cv::Mat> images){
     return mask;
 }
 
-/// Returns a set of masks that indicate thresholded temporal gradients using a 1x3 filter
+
 std::vector<cv::Mat> TemporalGradientDoG(std::vector<cv::Mat> images, float tsigma){
     // Convert to find temporal gradient mask
     std::vector<cv::Mat> mask;
-    // Apply Gaussian filter:
-    for (int i = 0; i < images.size(); i++){
-        cv::Mat temp_grad;
-        cv::GaussianBlur(images[i], temp_grad, cv::Size(0, 0), tsigma);
-        images[i] = temp_grad;
-    }
-    // Find DoG
-    for (int i = 1; i < images.size() - 1; i++){
-        cv::Mat temp_grad;
-        cv::addWeighted(images[i-1], -1, images[i+1], 1, 0, temp_grad);
+    // Define the filter parameters
+    int fsize = 7;
+    cv::Mat gaussFilter = cv::getGaussianKernel(fsize, tsigma, CV_64F);
+    // Normalize the filter
+    gaussFilter /= sum(gaussFilter)[0];
+
+    // Set the number of weights
+    int num_weights = fsize;
+    
+
+    // Loop through the images
+    for (int i = 3; i < images.size() - 4; i++) {
+        cv::Mat temp_grad = cv::Mat::zeros(images[i].rows, images[i].cols, CV_8U);
+
+        // Apply the filter to the current image
+        for (int j = 0; j < num_weights; j++) {
+            cv::Mat temp;            
+            cv::addWeighted(images[i+j-3], gaussFilter.at<float>(0, j), temp_grad, 1, 0, temp);
+            temp_grad = temp.clone();
+        }
+
+        // Store the filtered image in the output vector
         mask.push_back(temp_grad);
     }
-    return mask;
+
+    // derivative
+    return TemporalGradientFilter(mask);
 }
 
 void Threshold(std::vector<cv::Mat> images, uint8_t thresh){
