@@ -8,9 +8,9 @@ Project 1 - Motion Detection Using simple image filtering.
 - [x] Derivative of Gaussian.
 - [x] Smoothing filters (Box/Gaussain).
 - [x] Simple noise estimation.
-- [ ] "Strategize" thresholding.
-- [ ] Apply the smoothing filters and compare outputs.
-- [ ] Write report.
+- [x] "Strategize" thresholding.
+- [x] Apply the smoothing filters and compare outputs.
+- [x] Write report.
  
  ### Output:
 
